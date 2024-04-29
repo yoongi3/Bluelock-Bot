@@ -2,6 +2,7 @@ from discord.ext import commands
 import discord
 import os
 from dotenv import load_dotenv
+from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
@@ -42,17 +43,26 @@ async def get_latest_chapter():
         return None
     
     driver.get(URL)
+    soup = BeautifulSoup(driver.page_source, "html.parser")
+    latest_chapter_card = soup.find(class_="chap-link")
+    latest_chapter_text = latest_chapter_card.text.strip()
+    sections = [section for section in latest_chapter_text.split("\n") if section.strip()]
 
-    latest_chapter = "latest chapter" # Placeholder
-    return (latest_chapter)
+    chapter_title = sections[0]
+    chapter_date = sections[2]
+
+    print(chapter_title, chapter_date)
+    return (f"Latest chapter: {chapter_title} \nReleased: {chapter_date}")
 
 # Bot events and commands
 @bot.event
 async def on_ready():
+    channel = bot.get_channel(channel_ID)
     print ("Bot ready")
+
     global driver
     driver = init_driver()
-    channel = bot.get_channel(channel_ID)
+    
     latest_chapter = await get_latest_chapter()
     if latest_chapter:
         await channel.send(latest_chapter)
@@ -60,7 +70,6 @@ async def on_ready():
 @bot.command(name="read")
 async def load_manga(ctx, chapter = None):
     driver = ensure_driver()
-    
     driver.get(URL)
 
     await ctx.send("manga pages")
