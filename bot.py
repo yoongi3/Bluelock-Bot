@@ -16,6 +16,7 @@ URL = "https://po2scans.com/series/blue-lock"
 
 # Global variables
 driver = None
+latest_chapter = None
 
 # Initialize bot
 bot = commands.Bot(command_prefix="?", intents=discord.Intents.all())
@@ -51,7 +52,10 @@ async def get_latest_chapter():
     chapter_title = sections[0]
     chapter_date = sections[2]
 
-    print(chapter_title, chapter_date)
+    global latest_chapter
+    latest_chapter = chapter_title.split()[1]
+
+    print(latest_chapter)
     return (f"Latest chapter: {chapter_title} \nReleased: {chapter_date}")
 
 # Bot events and commands
