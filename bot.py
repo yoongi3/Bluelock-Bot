@@ -1,6 +1,7 @@
 from discord.ext import commands
 import discord
 import os
+import requests
 from dotenv import load_dotenv
 from bs4 import BeautifulSoup
 from selenium import webdriver
@@ -38,21 +39,25 @@ def ensure_driver():
         init_driver()
     return driver
     
-
+# Get latest chapter information
 async def get_latest_chapter():
     driver = ensure_driver()
     driver.get(HOME_URL)
     soup = BeautifulSoup(driver.page_source, "html.parser")
 
     latest_chapter_card = soup.find(class_="chap-link")
-    latest_chapter_text = latest_chapter_card.text.strip()
-    chapter_title, chapter_date, chapter_num = split_text(latest_chapter_text)
+    if latest_chapter_card:
+        latest_chapter_text = latest_chapter_card.text.strip()
+        chapter_title, chapter_date, chapter_num = split_text(latest_chapter_text)
 
-    global LATEST_CHAPTER
-    LATEST_CHAPTER = chapter_num
+        global LATEST_CHAPTER
+        LATEST_CHAPTER = chapter_num
 
-    return (chapter_title,chapter_date)
+        return chapter_title, chapter_date
+    else:
+        return None, None
 
+# Split chapter text into title, date, and chapter number
 def split_text(text):
     sections = [section for section in text.split("\n") if section.strip()]
 
@@ -62,7 +67,7 @@ def split_text(text):
 
     return title, date, chap_num
 
-
+# Get chapter link based on chapter number
 async def get_chapter_link(chapter_number):
     driver = ensure_driver()   
     driver.get(HOME_URL)
@@ -73,14 +78,44 @@ async def get_chapter_link(chapter_number):
         chap_divs = chap_section.find_all("div", class_="chap")
         for chap_div in chap_divs:
             _ , _, chap = split_text(chap_div.text)
-            print(chapter_number, chap) 
             if chapter_number == chap:
-                print(chapter_number, chap)
                 link = chap_div.find("div", class_="link").find("a")
                 return link.get("href")
-            
     return None
     
+async def get_chapter(ctx, link):
+    driver = ensure_driver()
+    driver.get(link)
+    soup = BeautifulSoup(driver.page_source, "html.parser")
+    
+    container_div = soup.find("div", class_="swiper-container")
+    if container_div:
+        slide_divs = container_div.find_all("div", class_="swiper-slide")
+        index = 0
+        for slide_div in slide_divs:
+            index += 1
+            image_tag = slide_div.find("img")
+            if image_tag:
+                image_url = image_tag.get("src")
+                filename = download_image(BASE_URL + image_url, f"page{index}.png")
+                if filename:
+                    file = discord.File(filename)
+                    await ctx.send(file=file)
+                    os.remove(filename)
+                else:
+                    await ctx.send(f"Failed to download image {index}")
+    else:
+        await ctx.send("No images found for this chapter")
+    
+# Download image from URL
+def download_image(url, filename):
+    response = requests.get(url)
+    if response.status_code == 200:
+        with open(filename, 'wb') as f:
+            f.write(response.content)
+        return filename
+    else:
+        return None
 
 # Bot events and commands
 @bot.event
@@ -98,11 +133,16 @@ async def on_ready():
 async def load_manga(ctx, chapter = None):
     if chapter is None:
         chapter = LATEST_CHAPTER
-    chapter_link = await get_chapter_link(chapter)
-    if chapter_link is None:
+
+    identifier = await get_chapter_link(chapter)
+
+    if identifier is None:
         await ctx.send(f"Can't find chapter {chapter}")
         return
-    await ctx.send(f"{BASE_URL}/{chapter_link}")
+    
+    await ctx.send(f"Loading chapter{chapter}\nPlease wait")
+    chapter_link = f"{BASE_URL}/{identifier}"
+    await get_chapter(ctx, chapter_link)
 
 # Run bot
 bot.run(bot_token)
