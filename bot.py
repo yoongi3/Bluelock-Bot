@@ -46,15 +46,22 @@ async def get_latest_chapter():
 
     latest_chapter_card = soup.find(class_="chap-link")
     latest_chapter_text = latest_chapter_card.text.strip()
-    sections = [section for section in latest_chapter_text.split("\n") if section.strip()]
-
-    chapter_title = sections[0]
-    chapter_date = sections[2]
+    chapter_title, chapter_date, chapter_num = split_text(latest_chapter_text)
 
     global LATEST_CHAPTER
-    LATEST_CHAPTER = chapter_title.split()[1]
+    LATEST_CHAPTER = chapter_num
 
     return (chapter_title,chapter_date)
+
+def split_text(text):
+    sections = [section for section in text.split("\n") if section.strip()]
+
+    title = sections[0]
+    date = sections[2]
+    chap_num = title.split()[1]
+
+    return title, date, chap_num
+
 
 async def get_chapter_link(chapter_number):
     driver = ensure_driver()   
@@ -65,7 +72,10 @@ async def get_chapter_link(chapter_number):
     if chap_section:
         chap_divs = chap_section.find_all("div", class_="chap")
         for chap_div in chap_divs:
-            if chapter_number in chap_div.text:
+            _ , _, chap = split_text(chap_div.text)
+            print(chapter_number, chap) 
+            if chapter_number == chap:
+                print(chapter_number, chap)
                 link = chap_div.find("div", class_="link").find("a")
                 return link.get("href")
             
@@ -87,17 +97,12 @@ async def on_ready():
 @bot.command(name="read")
 async def load_manga(ctx, chapter = None):
     if chapter is None:
-        if LATEST_CHAPTER:
-            chapter_link = await get_chapter_link(LATEST_CHAPTER)
-            await ctx.send(f"Latest chapter: {BASE_URL}/{chapter_link}")
-        else:
-            await ctx.send("Latest chapter not available.")
-    else:
-        chapter_link = await get_chapter_link(chapter)
-        if chapter_link:
-            await ctx.send(f"Chapter {chapter}: {BASE_URL}/{chapter_link}")
-        else:
-            await ctx.send(f"Chapter {chapter} not found.")
+        chapter = LATEST_CHAPTER
+    chapter_link = await get_chapter_link(chapter)
+    if chapter_link is None:
+        await ctx.send(f"Can't find chapter {chapter}")
+        return
+    await ctx.send(f"{BASE_URL}/{chapter_link}")
 
 # Run bot
 bot.run(bot_token)
