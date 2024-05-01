@@ -19,6 +19,7 @@ HOME_URL = "https://po2scans.com/series/blue-lock"
 # Global variables
 driver = None
 LATEST_CHAPTER = None
+command_in_progress = False
 
 # Initialize bot
 bot = commands.Bot(command_prefix="?", intents=discord.Intents.all())
@@ -91,19 +92,21 @@ async def get_chapter(ctx, link):
     container_div = soup.find("div", class_="swiper-container")
     if container_div:
         slide_divs = container_div.find_all("div", class_="swiper-slide")
-        index = 0
-        for slide_div in slide_divs:
-            index += 1
+        images = []
+        for index, slide_div in enumerate(slide_divs, start=1):
             image_tag = slide_div.find("img")
             if image_tag:
                 image_url = image_tag.get("src")
                 filename = download_image(BASE_URL + image_url, f"page{index}.png")
                 if filename:
-                    file = discord.File(filename)
-                    await ctx.send(file=file)
-                    os.remove(filename)
+                    images.append(filename) 
                 else:
                     await ctx.send(f"Failed to download image {index}")
+        # Send all images
+        for image in images:
+            file = discord.File(image)
+            await ctx.send(file=file)
+            os.remove(image)
     else:
         await ctx.send("No images found for this chapter")
     
@@ -131,6 +134,13 @@ async def on_ready():
 
 @bot.command(name="read")
 async def load_manga(ctx, chapter = None):
+    global command_in_progress
+    if command_in_progress:
+        await ctx.send("Another command is already in progress.")
+        command_in_progress = False
+        return
+    command_in_progress = True
+    
     if chapter is None:
         chapter = LATEST_CHAPTER
 
@@ -138,11 +148,15 @@ async def load_manga(ctx, chapter = None):
 
     if identifier is None:
         await ctx.send(f"Can't find chapter {chapter}")
+        command_in_progress = False
         return
     
-    await ctx.send(f"Loading chapter{chapter}\nPlease wait")
+    await ctx.send(f"Loading chapter {chapter}\nPlease wait")
     chapter_link = f"{BASE_URL}/{identifier}"
     await get_chapter(ctx, chapter_link)
+    command_in_progress = False
+    await ctx.send(f"Chapter {chapter} loaded")
+
 
 # Run bot
 bot.run(bot_token)
