@@ -16,6 +16,18 @@ channel_ID = int(os.getenv("CHANNEL_ID"))
 BASE_URL = "https://po2scans.com"
 HOME_URL = "https://po2scans.com/series/blue-lock"
 
+WELCOME_MESSAGE = """
+------------------------------------
+**⚽ Ｂｌｕｅ Ｌｏｃｋ Ｂｏｔ ⚽**
+------------------------------------
+
+*Commands:* 
+**?read / ?read (x)** : latest chapter / chapter (x)
+**?clean (x)** : delete (x) chat messages
+
+*Latest Chapter:*
+"""
+
 # Global variables
 driver = None
 LATEST_CHAPTER = None
@@ -97,7 +109,7 @@ async def get_chapter(ctx, link):
             image_tag = slide_div.find("img")
             if image_tag:
                 image_url = image_tag.get("src")
-                filename = download_image(BASE_URL + image_url, f"page{index}.png")
+                filename = download_image(BASE_URL + image_url, f"page_{index}.png")
                 if filename:
                     images.append(filename) 
                 else:
@@ -127,13 +139,15 @@ async def on_ready():
     print ("Bot ready")
     
     latest_chapter_title, latest_chapter_date = await get_latest_chapter()
+    await channel.send(WELCOME_MESSAGE)
     if latest_chapter_title:
-        await channel.send(f"Latest chapter: {latest_chapter_title} \nReleased: {latest_chapter_date}")
+        await channel.send(f"**{latest_chapter_title}** \nReleased: *{latest_chapter_date}*")
     else:
         await channel.send("Latest chapter not found")
 
 @bot.command(name="read")
 async def load_manga(ctx, chapter = None):
+    # load_manga has to complete before being called again
     global command_in_progress
     if command_in_progress:
         await ctx.send("Another command is already in progress.")
@@ -156,6 +170,14 @@ async def load_manga(ctx, chapter = None):
     await get_chapter(ctx, chapter_link)
     command_in_progress = False
     await ctx.send(f"Chapter {chapter} loaded")
+
+@bot.command()
+async def clean(ctx, amount: int):
+    if ctx.author.guild_permissions.manage_messages:
+        await ctx.channel.purge(limit=amount + 1)  # Add 1 to also delete the command message
+        await ctx.send(f"{amount} messages cleared by {ctx.author.mention}.", delete_after=5)
+    else:
+        await ctx.send("You don't have the required permissions to use this command.")
 
 
 # Run bot
