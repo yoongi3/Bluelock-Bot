@@ -1,0 +1,5 @@
+discord
+requests
+beautifulsoup4
+selenium
+python-dotenv
