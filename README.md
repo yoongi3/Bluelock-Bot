@@ -18,12 +18,12 @@ git clone https://github.com/yourusername/bluelock-bot.git
 ```bash
 pip install -r requirements.txt
 ```
-3. **Set Environment Variables:** Create a '.env' file in the project directory and add your Discord bot token and channel ID:
+3. **Set Environment Variables:** Create a '**.env**' file in the project directory and add your Discord bot token and channel ID:
 ```makefile
-BOT_TOKEN=your_discord_bot_token
+BOT_TOKEN="your_discord_bot_token"
 CHANNEL_ID=your_discord_channel_id
 ```
-4. **Run the Bot:** Execute the 'bot.py' file to start the Blue Lock Bot:
+4. **Run the Bot:** Execute the '**bot.py**' file to start the Blue Lock Bot:
 ```bash 
 python bot.py
 ```
@@ -32,6 +32,6 @@ python bot.py
 Once the bot is running and added to your Discord server, you can use the following commands:
 
 - **?read:** Fetches and sends the latest chapter of the Blue Lock manga series.
-    - Example: '?read' or '?read 50' (to read chapter 50)
+    - Example: '**?read**' or '**?read 50**' (to read chapter 50)
 - **?clean:** Deletes a specified number of messages in the channel (requires appropriate permissions).
-    - Example: '?clean 10' (to delete 10 messages)
+    - Example: '**?clean 10**' (to delete 10 messages)
