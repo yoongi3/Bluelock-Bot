@@ -35,3 +35,7 @@ Once the bot is running and added to your Discord server, you can use the follow
     - Example: '**?read**' or '**?read 50**' (to read chapter 50)
 - **?clean:** Deletes a specified number of messages in the channel (requires appropriate permissions).
     - Example: '**?clean 10**' (to delete 10 messages)
+
+## Screenshots
+![Welcome Message](./Screenshots/Bot-Screenshot1.png)
+![Pages](./Screenshots/Bot-Screenshot2.png)
