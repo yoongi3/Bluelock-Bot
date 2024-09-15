@@ -12,7 +12,7 @@ To set up the Blue Lock Bot for your Discord server, follow these steps:
 
 1. **Clone the Repository:** Clone this repository to your local machine using the following command:
 ```bash
-git clone https://github.com/yourusername/bluelock-bot.git
+git clone https://github.com/yoongi3/bluelock-bot.git
 ```
 2. **Install Dependencies:** Navigate to the project directory and install the required dependencies using the following command:
 ```bash
